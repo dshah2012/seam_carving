@@ -1,0 +1,3 @@
+/home/dash/seam_carving/build/CMakeFiles/rebuild_cache.dir
+/home/dash/seam_carving/build/CMakeFiles/sc.dir
+/home/dash/seam_carving/build/CMakeFiles/edit_cache.dir

@@ -3,146 +3,202 @@
 
 using namespace cv;
 using namespace std;
+/*
+ * References:
+ * http://www.cs.cmu.edu/afs/andrew/scs/cs/15-463/f07/proj2/www/wwedler/
+ * http://www.cs.princeton.edu/courses/archive/spring14/cos226/assignments/seamCarving.html
+ */
+ bool execute_seam_carving(Mat &,int,int,Mat &);
 
-
-
-
-bool seam_carving(Mat& in_image, int new_width, int new_height, Mat& out_image){
+bool seam_carving(Mat &in_image, int new_width, int new_height, Mat &out_image) {
 
     // some sanity checks
     // Check 1 -> new_width <= in_image.cols
-    if(new_width>in_image.cols){
-        cout<<"Invalid request!!! new_width has to be smaller than the current size!"<<endl;
+    if (new_width > in_image.cols) {
+        cout << "Invalid request!!! new_width has to be smaller than the current size!" << endl;
         return false;
     }
-    if(new_height>in_image.rows){
-        cout<<"Invalid request!!! ne_height has to be smaller than the current size!"<<endl;
+    if (new_height > in_image.rows) {
+        cout << "Invalid request!!! ne_height has to be smaller than the current size!" << endl;
         return false;
     }
-    
-    if(new_width<=0){
-        cout<<"Invalid request!!! new_width has to be positive!"<<endl;
+
+    if (new_width <= 0) {
+        cout << "Invalid request!!! new_width has to be positive!" << endl;
         return false;
 
     }
-    
-    if(new_height<=0){
-        cout<<"Invalid request!!! new_height has to be positive!"<<endl;
+
+    if (new_height <= 0) {
+        cout << "Invalid request!!! new_height has to be positive!" << endl;
         return false;
-        
+
     }
 
-    
-    return seam_carving_trivial(in_image, new_width, new_height, out_image);
+
+    return execute_seam_carving(in_image, new_width, new_height, out_image);
+}
+
+/**
+ * Calculate pixel energy using dual gradient energy function
+ * (Reference: http://www.cs.princeton.edu/courses/archive/spring14/cos226/assignments/seamCarving.html)
+ *
+ * @param in_image
+ * @param i
+ * @param j
+ * @return
+ */
+double calculate_pixel_energy(Mat &in_image, int i, int j) {
+
+    Vec3b pixel_xl = in_image.at<Vec3b>((i != 0) ? i - 1 : in_image.rows - 1, j);
+    Vec3b pixel_xr = in_image.at<Vec3b>((i != in_image.rows - 1) ? i + 1 : 0, j);
+    Vec3b pixel_yt = in_image.at<Vec3b>(i, (j != 0) ? j - 1 : in_image.cols - 1);
+    Vec3b pixel_yb = in_image.at<Vec3b>(i, (j != in_image.cols - 1) ? j + 1 : 0);
+    double dx = pow(pixel_xr[0] - pixel_xl[0], 2) + pow(pixel_xr[1] - pixel_xl[1], 2) + pow(pixel_xr[2] - pixel_xl[2], 2);
+    double dy = pow(pixel_yb[0] - pixel_yt[0], 2) + pow(pixel_yb[1] - pixel_yt[1], 2) + pow(pixel_yb[2] - pixel_yt[2], 2);
+
+    return sqrt(dx + dy);
+}
+
+/**
+ * Map a pixel into energy value
+ *
+ * @param in_image
+ */
+vector<vector<int> > assign_energy_to_pixels(Mat &in_image, Mat &out_image) {
+    int rows = in_image.rows;
+    int cols = in_image.cols;
+
+    out_image = in_image.clone();
+    vector<vector<int> > energy(rows);
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+
+            energy[i].push_back((int) calculate_pixel_energy(in_image, i, j));
+            out_image.at<Vec3b>(i, j) = energy[i][j];
+        }
+    }
+
+    return energy;
+}
+
+vector<int> find_seam(Mat &in_image, vector<vector<int> > energy) {
+    int rows =  in_image.rows;
+    int cols = in_image.cols;
+
+    vector<vector<int> > T(rows);
+    for (int k = 0; k < cols; k++) {
+        T[0].push_back(energy[0][k]);
+    }
+
+    for (int i = 1; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            if(j == 0)
+                T[i].push_back(energy[i][j] + min(T[i-1][j], T[i-1][j+1]));
+            else if(j == cols-1)
+                T[i].push_back(energy[i][j] + min(T[i-1][j-1], T[i-1][j]));
+            else
+                T[i].push_back(energy[i][j] + min(min(T[i-1][j], T[i-1][j+1]), T[i-1][j-1]));
+
+        }
+    }
+
+    int min_value = numeric_limits<int>::max();
+    // To backtrack from the lower most row for the seam path
+    int min_index = -1;
+
+    for (int l = 0; l < cols; l++) {
+        if(T[rows-1][l] < min_value) {
+            min_value = T[rows-1][l];
+            min_index = l;
+        }
+    }
+
+
+    vector<int> path(rows);
+    Point point(rows - 1, min_index);
+    path[point.x] = point.y;
+
+    while(point.x != 0) {
+        int row = point.x, col = point.y;
+        int value = T[row][col] - energy[row][col];
+        if(col == 0) {
+            if(value == T[row-1][col]) {
+                point = Point(row-1, col);
+            } else {
+                point = Point(row-1, col+1);
+            }
+        } else if(col == cols - 1) {
+            if(value == T[row-1][col]) {
+                point = Point(row-1, col);
+            } else {
+                point = Point(row-1, col-1);
+            }
+        } else {
+            if(value == T[row-1][col-1]) {
+                point = Point(row-1, col-1);
+            } else if(value == T[row-1][col]) {
+                point = Point(row-1, col);
+            } else {
+                point = Point(row-1, col+1);
+            }
+        }
+        path[point.x] = point.y;
+    }
+
+    return path;
+}
+
+void remove_seam(Mat &out_image, vector<int> path) {
+    int rows = out_image.rows, cols = out_image.cols;
+    Mat new_image = Mat(rows, cols - 1, CV_8UC3);
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols-1; j++) {
+            if(j >= path[i])
+                new_image.at<Vec3b>(i, j) = out_image.at<Vec3b>(i, j+1);
+            else
+                new_image.at<Vec3b>(i, j) = out_image.at<Vec3b>(i, j);
+        }
+    }
+
+    new_image.copyTo(out_image);
+}
+
+void rotate_image(Mat& in_image, Mat& out_image) {
+    rotate(in_image, out_image, ROTATE_90_CLOCKWISE);
+    out_image.copyTo(in_image);
+}
+
+void rotate_image_anticlockwise(Mat& in_image, Mat& out_image) {
+    rotate(in_image, out_image, ROTATE_90_COUNTERCLOCKWISE);
+    out_image.copyTo(in_image);
 }
 
 
-// seam carves by removing trivial seams
-bool seam_carving_trivial(Mat& in_image, int new_width, int new_height, Mat& out_image){
+bool execute_seam_carving(Mat &in_image, int new_width, int new_height, Mat &out_image) {
 
     Mat iimage = in_image.clone();
     Mat oimage = in_image.clone();
-    while(iimage.rows!=new_height || iimage.cols!=new_width){
-        // horizontal seam if needed
-        if(iimage.rows>new_height){
-            reduce_horizontal_seam_trivial(iimage, oimage);
-            iimage = oimage.clone();
-        }
-        
-        if(iimage.cols>new_width){
-            reduce_vertical_seam_trivial(iimage, oimage);
-            iimage = oimage.clone();
-        }
+
+    while (iimage.cols > new_width) {
+        vector<vector<int> > energy = assign_energy_to_pixels(iimage, oimage);
+        vector<int> path = find_seam(iimage, energy);
+        remove_seam(iimage, path);
+       // cout<<"("<<iimage.cols<<","<<iimage.rows<<")"<<endl;
     }
-    
+
+    rotate_image(iimage, oimage);
+
+    while (iimage.cols > new_height) {
+        vector<vector<int> > energy = assign_energy_to_pixels(iimage, oimage);
+        vector<int> path = find_seam(iimage, energy);
+        remove_seam(iimage, path);
+       // cout<<"("<<iimage.rows<<","<<iimage.cols<<")"<<endl;
+    }
+
+    rotate_image_anticlockwise(iimage, oimage);
     out_image = oimage.clone();
-    return true;
-}
 
-// horizontl trivial seam is a seam through the center of the image
-bool reduce_horizontal_seam_trivial(Mat& in_image, Mat& out_image){
-
-    // retrieve the dimensions of the new image
-    int rows = in_image.rows-1;
-    int cols = in_image.cols;
-    
-    // create an image slighly smaller
-    out_image = Mat(rows, cols, CV_8UC3);
-    
-    //populate the image
-    int middle = in_image.rows / 2;
-    
-    for(int i=0;i<=middle;++i)
-        for(int j=0;j<cols;++j){
-            Vec3b pixel = in_image.at<Vec3b>(i, j);
-            
-            /* at operator is r/w
-            pixel[0] = 255;
-            pixel[1] =255;
-            pixel[2]=255;
-            */
-            
-            
-            
-            out_image.at<Vec3b>(i,j) = pixel;
-        }
-    
-    for(int i=middle+1;i<rows;++i)
-        for(int j=0;j<cols;++j){
-            Vec3b pixel = in_image.at<Vec3b>(i+1, j);
-            
-            /* at operator is r/w
-             pixel[0] --> red
-             pixel[1] --> green
-             pixel[2] --> blue
-             */
-            
-            
-            out_image.at<Vec3b>(i,j) = pixel;
-        }
-
-    return true;
-}
-
-// vertical trivial seam is a seam through the center of the image
-bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
-    // retrieve the dimensions of the new image
-    int rows = in_image.rows;
-    int cols = in_image.cols-1;
-    
-    // create an image slighly smaller
-    out_image = Mat(rows, cols, CV_8UC3);
-    
-    //populate the image
-    int middle = in_image.cols / 2;
-    
-    for(int i=0;i<rows;++i)
-        for(int j=0;j<=middle;++j){
-            Vec3b pixel = in_image.at<Vec3b>(i, j);
-            
-            /* at operator is r/w
-             pixel[0] --> red
-             pixel[1] --> green
-             pixel[2] --> blue
-             */
-            
-            
-            out_image.at<Vec3b>(i,j) = pixel;
-        }
-    
-    for(int i=0;i<rows;++i)
-        for(int j=middle+1;j<cols;++j){
-            Vec3b pixel = in_image.at<Vec3b>(i, j+1);
-            
-            /* at operator is r/w
-             pixel[0] --> red
-             pixel[1] --> green
-             pixel[2] --> blue
-             */
-            
-            
-            out_image.at<Vec3b>(i,j) = pixel;
-        }
-    
     return true;
 }
