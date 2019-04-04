@@ -15,6 +15,10 @@ sc.h
 /home/dash/seam_carving/src/sc.cpp
 sc.h
 /home/dash/seam_carving/src/sc.h
+cmath
+-
+stack
+-
 
 /home/dash/seam_carving/src/sc.h
 opencv2/opencv.hpp
