@@ -68,6 +68,7 @@ bool seam_carving_trivial(Mat& in_image, int new_width, int new_height, Mat& out
         }
     }
 	rotate_image_anticlockwise(iimage, oimage);
+	//rotate_image_anticlockwise(iimage, oimage);
     out_image = oimage.clone();
     return true;
 }
@@ -219,8 +220,8 @@ s.pop();
 
 
     return true;
-}
-*/
+}*/
+
 
 bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
     
@@ -238,7 +239,7 @@ bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
 
     
 
-	for(int i=0;i<cols;++i)     {
+	for(int i=cols-1;i>0;--i)     {
              val[0][i]=abs((int)energy.at<char>(0,i));
            
        }
