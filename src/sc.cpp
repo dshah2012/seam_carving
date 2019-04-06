@@ -70,6 +70,8 @@ bool seam_carving_trivial(Mat& in_image, int new_width, int new_height, Mat& out
 }
 
 Mat getEnergy(Mat &in_image){
+	
+	
 	Mat src, src_gray;
   	Mat energy;
 	int scale = 1;
@@ -97,26 +99,23 @@ bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
 	int finalEnergyvalues[rows][cols];
 	for(int i=cols-1;i>0;--i)     
 	{
-             finalEnergyvalues[0][i]=abs((int)energy.at<char>(0,i));      
+             finalEnergyvalues[0][i]=(int)energy.at<uchar>(0,i);      
+    }
+	
+	
+	for(int r = 1; r < rows; r++){
+        for(int c = 0; c < cols; c++){
+            if (c == 0)
+                finalEnergyvalues[r][c] = min(finalEnergyvalues[r-1][c+1], finalEnergyvalues[r-1][c]);
+            else if (c == cols-1)
+                finalEnergyvalues[r][c] = min(finalEnergyvalues[r-1][c-1], finalEnergyvalues[r-1][c]);
+            else
+                finalEnergyvalues[r][c] = min({finalEnergyvalues[r-1][c-1], finalEnergyvalues[r-1][c], finalEnergyvalues[r-1][c+1]});
+            finalEnergyvalues[r][c] += (int)energy.at<uchar>(r,c);
+        }
     }
     
-    for(int i=1;i<rows;++i){
-        for(int j=0;j<cols;++j){
-            if(j==0)
-               {
-				   finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j+1))+finalEnergyvalues[i-1][j+1]);
-               }
-              else if(j==cols-1)
-               {
-				   finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j-1))+finalEnergyvalues[i-1][j-1]);
-               }
-             else
-               {
-				  finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j-1))+finalEnergyvalues[i-1][j-1],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j+1))+finalEnergyvalues[i-1][j+1]));
-
-               }
-		}
-    }
+   
 
 
 	int min_value,min_value2;
