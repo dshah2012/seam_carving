@@ -33,13 +33,13 @@ bool seam_carving(Mat& in_image, int new_width, int new_height, Mat& out_image){
     return seam_carving_trivial(in_image, new_width, new_height, out_image);
 }
 
-void rotate_image(Mat& in_image, Mat& out_image) {
+void clockWiseRotation(Mat& in_image, Mat& out_image) {
     rotate(in_image, out_image, ROTATE_90_CLOCKWISE);
     out_image.copyTo(in_image);
 	cout<<"Rotated"<<endl;
 }
 
-void rotate_image_anticlockwise(Mat& in_image, Mat& out_image) {
+void antiClockWiseRotation(Mat& in_image, Mat& out_image) {
     rotate(in_image, out_image, ROTATE_90_COUNTERCLOCKWISE);
     out_image.copyTo(in_image);
 }
@@ -49,17 +49,13 @@ bool seam_carving_trivial(Mat& in_image, int new_width, int new_height, Mat& out
     Mat iimage = in_image.clone();
     Mat oimage = in_image.clone();
  while(iimage.cols!=new_width){
-      /*  if(iimage.rows>new_height){
-            reduce_horizontal_seam_trivial(iimage, oimage);
-            iimage = oimage.clone();
-        }*/
         if(iimage.cols>new_width){
 			cout<<iimage.cols<<endl;
             reduce_vertical_seam_trivial(iimage, oimage);
             iimage = oimage.clone();
         }
  }
- rotate_image(iimage, oimage);
+ clockWiseRotation(iimage, oimage);
  while(iimage.cols!=new_height){
 		if(iimage.cols>new_height){
 			cout<<iimage.cols<<endl;
@@ -67,10 +63,10 @@ bool seam_carving_trivial(Mat& in_image, int new_width, int new_height, Mat& out
             iimage = oimage.clone();
         }
     }
-	rotate_image_anticlockwise(iimage, oimage);
+ antiClockWiseRotation(iimage, oimage);
 	//rotate_image_anticlockwise(iimage, oimage);
-    out_image = oimage.clone();
-    return true;
+ out_image = oimage.clone();
+ return true;
 }
 
 Mat getEnergy(Mat &in_image){
@@ -92,266 +88,115 @@ Mat getEnergy(Mat &in_image){
 	return energy;
 }
 
-
-// horizontl trivial seam is a seam through the center of the image
-/*bool reduce_horizontal_seam_trivial(Mat& in_image, Mat& out_image){
-
-    int rows = in_image.rows;
-    int cols = in_image.cols;
-    
-    // create an image slighly smaller
-    out_image = Mat(rows-1, cols, CV_8UC3);
-	//calculating energy of image 
-	Mat energy=getEnergy(in_image);
-	int tt=0;	
-	int tt1=0;
-    int val[rows][cols];
-    for(int i=0;i<=rows-1;++i)
-     {
-        val[i][cols-1]=abs((double)energy.at<char>(i,cols-1));
-     }
-        for(int i=cols-2;i>=0;--i)
-        {
-
-            for(int j=0;j<=rows-1;++j)
-            {
-              if(j==0)
-                  {
-					  val[j][i]=min(abs((double)energy.at<char>(j,i)-(double)energy.at<char>(j,i+1))+val[j][i+1],abs((double)energy.at<char>(j,i)-(double)energy.at<char>(j+1,i+1))+val[j+1][i+1]);
-                  }
-
-                 else if(j==rows-1)
-                     {
-						 val[j][i]=min(abs((double)energy.at<char>(j,i)-(double)energy.at<char>(j,i+1))+val[j][i+1],abs((double)energy.at<char>(j,i)-(double)energy.at<char>(j-1,i+1))+val[j-1][i+1]);
-                     } 
-                   else
-                       { 
-				   val[j][i]=min(abs((double)energy.at<char>(j,i)-(double)energy.at<char>(j,i+1))+val[j][i+1],min(abs((double)energy.at<char>(j,i)-(double)energy.at<char>(j+1,i+1))+val[j+1][i+1],abs((double)energy.at<char>(j,i)-(double)energy.at<char>(j-1,i+1))+val[j-1][i+1]));
-                       }
-            }
-         }
-
-int temp2;
-
-int temp=val[0][0];
-
-
-//Identifying the lowest evergy value in leftmost column
-
-for(int j=0;j<rows;++j)
-      {
-
-            if(temp>val[j][0])
-            {
-            temp=val[j][0];
-            tt1=j;
-            }
-     }
-
-
-stack<int> s;//statck to save the seam
-s.push(tt1);
-//saving coordinates of seam pixel
-for(int i=0;i<cols-1;++i)
-      {
-        if(tt1==0)
-                  {temp2=min(val[tt1][i+1],val[tt1+1][i+1]);
-  
-                    if(temp2==val[tt1+1][i+1])
-                        {tt1=tt1+1;
-                        }
-                       s.push(tt1);
-
-                   }
-      
-           else if(tt1==rows-1)
-                    {temp2=min(val[tt1][i+1],val[tt1-1][i+1]);
-                       if(temp2==val[tt1-1][i+1])
-                       {tt1=tt1-1;
-                       }
-                     s.push(tt1);
-                     }
-               else
-               {
-
-                     temp2=min(val[tt1][i+1],min(val[tt1-1][i+1],val[tt1+1][i+1]));
-                      if(temp2==val[tt1-1][i+1])
-                     {tt1=tt1-1;
-                       
-                       }
-                      else if(temp2==val[tt1+1][i+1])
-                        {tt1=tt1+1;
-                         }
-                s.push(tt1);
-
-               }
-} 
-
-//removing seam horizontally
-for (int j = cols-1; j>=0; --j)
-{
-	if (s.top()<rows-1)
-                        {
-		for (int i = 0;i<s.top();++i)
-                                           {
-			
-             Vec3b pixel=in_image.at<Vec3b>(i,j);
-              out_image.at<Vec3b>(i,j)=pixel;		
-		                             }
-		for (int i = s.top()+1;i<rows;++i) 
-                                                    {
-			
-		                                   
-Vec3b pixel=in_image.at<Vec3b>(i,j);
-              out_image.at<Vec3b>(i-1,j)=pixel; }
-	                  }
-                    
-	else {
-		for (int i = 0;i<rows-1;++i)
-                                           {
-					
-		                          Vec3b pixel=in_image.at<Vec3b>(i,j);
-              out_image.at<Vec3b>(i,j)=pixel;	  }
-	      }
-s.pop();
- }
-
-
-
-
-    return true;
-}*/
-
-
 bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
     
     int rows = in_image.rows;
     int cols = in_image.cols;
-    
-   
     out_image = Mat(rows, cols-1, CV_8UC3);
     Mat energy=getEnergy(in_image);
- 
-      
-     
-    
-	int val[rows][cols];
-
-    
-
-	for(int i=cols-1;i>0;--i)     {
-             val[0][i]=abs((int)energy.at<char>(0,i));
-           
-       }
+	int finalEnergyvalues[rows][cols];
+	for(int i=cols-1;i>0;--i)     
+	{
+             finalEnergyvalues[0][i]=abs((int)energy.at<char>(0,i));      
+    }
     
     for(int i=1;i<rows;++i){
-            for(int j=0;j<cols;++j){
+        for(int j=0;j<cols;++j){
             if(j==0)
-               {val[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+val[i-1][j],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j+1))+val[i-1][j+1]);
+               {
+				   finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j+1))+finalEnergyvalues[i-1][j+1]);
                }
-
               else if(j==cols-1)
-               {val[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+val[i-1][j],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j-1))+val[i-1][j-1]);
+               {
+				   finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j-1))+finalEnergyvalues[i-1][j-1]);
                }
-
              else
+               {
+				  finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j-1))+finalEnergyvalues[i-1][j-1],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j+1))+finalEnergyvalues[i-1][j+1]));
 
-                  {val[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+val[i-1][j],min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j-1))+val[i-1][j-1],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j+1))+val[i-1][j+1]));
-
-                  }
-
-                  
-                                   }
-                          }
+               }
+		}
+    }
 
 
-int temp;int temp2;
-temp=val[rows-1][0];
-int tt=0;
-
+	int min_value,min_value2;
+	min_value=numeric_limits<int>::max();
+	int min_index=0;
 
 //finding meanimum in topmost row of image
 
 	for(int i=0;i<cols;++i)
       {
-
-            if(temp>val[rows-1][i])
+            if(min_value>finalEnergyvalues[rows-1][i])
             {
-            temp=val[rows-1][i];
-             tt=i;
-             }
+				min_value=finalEnergyvalues[rows-1][i];
+				min_index=i;
+            }
       }
 
-stack<int> s;
-s.push(tt);
+	stack<int> s;
+	s.push(min_index);
 
 
-for(int i=rows-1;i>0;--i)
+	for(int i=rows-1;i>0;--i)
       {
-               if(tt==0)
-                  {temp2=min(val[i-1][tt],val[i-1][tt+1]);
-  
-                    if(temp2==val[i-1][tt+1])
-                        {tt=tt+1;
+            if(min_index==0)
+                  {
+					  min_value2=min(finalEnergyvalues[i-1][min_index],finalEnergyvalues[i-1][min_index+1]);
+						if(min_value2==finalEnergyvalues[i-1][min_index+1])
+                        {
+							min_index=min_index+1;
                         }
-                       s.push(tt);
-
+                       s.push(min_index);
                      }
-      
-                 else  if(tt==cols-1)
-                    {temp2=min(val[i-1][tt],val[i-1][tt-1]);
-                       if(temp2==val[i-1][tt-1])
-                       {tt=tt-1;
-                       }
-                     s.push(tt);
-                     }
-               else
+             else if(min_index==cols-1)
+                   {
+					   min_value2=min(finalEnergyvalues[i-1][min_index],finalEnergyvalues[i-1][min_index-1]);
+					   if(min_value2==finalEnergyvalues[i-1][min_index-1])
+					   {
+						  min_index=min_index-1;
+					   }
+					   s.push(min_index);
+                    }
+			  else
                {
-
-                     temp2=min(val[i-1][tt],min(val[i-1][tt-1],val[i-1][tt+1]));
-                      if(temp2==val[i-1][tt-1])
-                         {tt=tt-1;
-                    
+                     min_value2=min(finalEnergyvalues[i-1][min_index],min(finalEnergyvalues[i-1][min_index-1],finalEnergyvalues[i-1][min_index+1]));
+                      if(min_value2==finalEnergyvalues[i-1][min_index-1])
+                         {
+							 min_index=min_index-1;
                          }
-                       else if(temp2==val[i-1][tt+1])
-                       {tt=tt+1;
-                      
+                       else if(min_value2==finalEnergyvalues[i-1][min_index+1])
+                       {
+						   min_index=min_index+1;
                        }
-                       s.push(tt);
-                
-
+                       s.push(min_index);
                }
 
-}
-for (int i = 0; i< rows; ++i)
-{
-	if (s.top()<cols-1)
-        {
-		for (int j = 0;j<s.top();++j)
-           {
-                       Vec3b pixel = in_image.at<Vec3b>(i, j);
-            
-
-			out_image.at<Vec3b>(i,j) = pixel;		
-		                             }
-                
-		for (int j = s.top()+1;j<cols;++j) 
-                                                    {
-			Vec3b pixel = in_image.at<Vec3b>(i,j);	
-                         out_image.at<Vec3b>(i,j-1)=pixel;	
-		                                    }
-	                 }
-	else {
-		for (int j = 0;j<cols-1;++j)
-                                           {
-			Vec3b pixel = in_image.at<Vec3b>(i,j);	
-                        out_image.at<Vec3b>(i,j)=pixel;	
-		                            }
+	}
+	for (int i = 0; i< rows; ++i)
+	{
+		if (s.top()<cols-1)
+		{
+			for (int j = 0;j<s.top();++j)
+			{
+                Vec3b pixel = in_image.at<Vec3b>(i, j);
+				out_image.at<Vec3b>(i,j) = pixel;		
+		    }        
+			for (int j = s.top()+1;j<cols;++j) 
+            {
+				Vec3b pixel = in_image.at<Vec3b>(i,j);	
+                out_image.at<Vec3b>(i,j-1)=pixel;	
+		    }
 	     }
-
-s.pop();
- }
-
-
+		else 
+		{
+			for (int j = 0;j<cols-1;++j)
+            {
+				Vec3b pixel = in_image.at<Vec3b>(i,j);	
+                out_image.at<Vec3b>(i,j)=pixel;	
+		    }
+	     }
+		s.pop();
+	}
     return true;
 }
