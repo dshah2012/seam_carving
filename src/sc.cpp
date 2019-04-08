@@ -115,7 +115,6 @@ bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
              else
                {
 				  finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j-1))+finalEnergyvalues[i-1][j-1],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j+1))+finalEnergyvalues[i-1][j+1]));
-
                }
 		}
     }
@@ -139,45 +138,45 @@ bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
       }
 
 	vector<int> path(rows);
-    Point point(rows - 1, min_index);
-    path[point.x] = point.y;
+    Point position(rows - 1, min_index);
+    path[position.x] = position.y;
 	int value=0;
-    while(point.x != 0) {
-        int row = point.x, col = point.y;
+    while(position.x != 0) {
+        int row = position.x, col = position.y;
         //int value = finalEnergyvalues[row][col] - (int)energy.at<uchar>(row,col);
         if(col == 0) {
 			value=min(finalEnergyvalues[row-1][col],finalEnergyvalues[row-1][col+1]);
             if(value == finalEnergyvalues[row-1][col]) {
-                point = Point(row-1, col);
+                position = Point(row-1, col);
             } else {
-                point = Point(row-1, col+1);
+                position = Point(row-1, col+1);
             }
         } else if(col == cols - 1) {
 			value=min(finalEnergyvalues[row-1][col],finalEnergyvalues[row-1][col-1]);
             if(value == finalEnergyvalues[row-1][col]) {
-                point = Point(row-1, col);
+                position = Point(row-1, col);
             } else {
-                point = Point(row-1, col-1);
+                position = Point(row-1, col-1);
             }
         } else {
 			value=min(finalEnergyvalues[row-1][col],min(finalEnergyvalues[row-1][col-1],finalEnergyvalues[row-1][col+1]));
             if(value == finalEnergyvalues[row-1][col-1]) {
-                point = Point(row-1, col-1);
+                position = Point(row-1, col-1);
             } else if(value == finalEnergyvalues[row-1][col]) {
-                point = Point(row-1, col);
+                position = Point(row-1, col);
             } else {
-                point = Point(row-1, col+1);
+                position = Point(row-1, col+1);
             }
         }
-        path[point.x] = point.y;
+        path[position.x] = position.y;
     }
 	
-	for(int r = 0; r < in_image.rows; r++ ) {
-        for (int c = 0; c < in_image.cols; c++){
-            if (c >= path[r])
-                out_image.at<Vec3b>(r,c) = in_image.at<Vec3b>(r,c+1);
+	for(int row = 0; row < in_image.rows; row++ ) {
+        for (int col = 0; col < in_image.cols; col++){
+            if (col >= path[row])
+                out_image.at<Vec3b>(row,col) = in_image.at<Vec3b>(row,col+1);
             else
-                out_image.at<Vec3b>(r,c) = in_image.at<Vec3b>(r,c);
+                out_image.at<Vec3b>(row,col) = in_image.at<Vec3b>(row,col);
         }
     }
     return true;
