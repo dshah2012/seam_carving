@@ -106,27 +106,25 @@ bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
         for(int j=0;j<cols;++j){
             if(j==0)
                {
-				   finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j+1))+finalEnergyvalues[i-1][j+1]);
+		 finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j+1))+finalEnergyvalues[i-1][j+1]);
+	
                }
               else if(j==cols-1)
                {
-				   finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j-1))+finalEnergyvalues[i-1][j-1]);
+		finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j-1))+finalEnergyvalues[i-1][j-1]);
+
                }
              else
                {
-				  finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j-1))+finalEnergyvalues[i-1][j-1],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j+1))+finalEnergyvalues[i-1][j+1]));
+		finalEnergyvalues[i][j]=min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j))+finalEnergyvalues[i-1][j],min(abs(energy.at<char>(i,j)-energy.at<char>(i-1,j-1))+finalEnergyvalues[i-1][j-1],abs(energy.at<char>(i,j)-energy.at<char>(i-1,j+1))+finalEnergyvalues[i-1][j+1]));
+		
+
                }
 		}
     }
-    
-   
-
-
 	int min_value,min_value2;
 	min_value=numeric_limits<int>::max();
 	int min_index=0;
-
-//finding meanimum in topmost row of image
 
 	for(int i=0;i<cols;++i)
       {
@@ -137,13 +135,13 @@ bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
             }
       }
 
-	vector<int> path(rows);
-    Point position(rows - 1, min_index);
-    path[position.x] = position.y;
+	stack<int> path;
+	path.push(min_index);
+	Point position(rows - 1, min_index);
 	int value=0;
-    while(position.x != 0) {
+
+	 while(position.x != 0) {
         int row = position.x, col = position.y;
-        //int value = finalEnergyvalues[row][col] - (int)energy.at<uchar>(row,col);
         if(col == 0) {
 			value=min(finalEnergyvalues[row-1][col],finalEnergyvalues[row-1][col+1]);
             if(value == finalEnergyvalues[row-1][col]) {
@@ -151,6 +149,7 @@ bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
             } else {
                 position = Point(row-1, col+1);
             }
+	  path.push(position.y);
         } else if(col == cols - 1) {
 			value=min(finalEnergyvalues[row-1][col],finalEnergyvalues[row-1][col-1]);
             if(value == finalEnergyvalues[row-1][col]) {
@@ -158,6 +157,7 @@ bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
             } else {
                 position = Point(row-1, col-1);
             }
+		path.push(position.y);
         } else {
 			value=min(finalEnergyvalues[row-1][col],min(finalEnergyvalues[row-1][col-1],finalEnergyvalues[row-1][col+1]));
             if(value == finalEnergyvalues[row-1][col-1]) {
@@ -167,17 +167,33 @@ bool reduce_vertical_seam_trivial(Mat& in_image, Mat& out_image){
             } else {
                 position = Point(row-1, col+1);
             }
+	path.push(position.y);
         }
-        path[position.x] = position.y;
-    }
-	
-	for(int row = 0; row < in_image.rows; row++ ) {
-        for (int col = 0; col < in_image.cols; col++){
-            if (col >= path[row])
-                out_image.at<Vec3b>(row,col) = in_image.at<Vec3b>(row,col+1);
-            else
-                out_image.at<Vec3b>(row,col) = in_image.at<Vec3b>(row,col);
-        }
-    }
+}
+	for (int row = 0; row< rows; ++row)
+	{
+		if (path.top()<cols-1)
+		{
+			for (int col = 0;col<path.top();++col)
+			{
+                	Vec3b pixel = in_image.at<Vec3b>(row, col);
+				out_image.at<Vec3b>(row,col) = pixel;		
+		    }        
+			for (int col = path.top()+1;col<cols;++col) 
+            {
+				Vec3b pixel = in_image.at<Vec3b>(row,col);	
+                out_image.at<Vec3b>(row,col-1)=pixel;	
+		    }
+	     }
+		else 
+		{
+			for (int col = 0;col<cols-1;++col)
+            {
+				Vec3b pixel = in_image.at<Vec3b>(row,col);	
+                		out_image.at<Vec3b>(row,col)=pixel;	
+		    }
+	     }
+		path.pop();
+	}
     return true;
 }

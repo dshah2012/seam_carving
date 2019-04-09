@@ -4,8 +4,8 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/dash/seam_carving/src/main.cpp" "/home/dash/seam_carving/build/CMakeFiles/sc.dir/src/main.cpp.o"
-  "/home/dash/seam_carving/src/sc.cpp" "/home/dash/seam_carving/build/CMakeFiles/sc.dir/src/sc.cpp.o"
+  "/home/d/d_darsha/seam_carving/src/main.cpp" "/home/d/d_darsha/seam_carving/build/CMakeFiles/sc.dir/src/main.cpp.o"
+  "/home/d/d_darsha/seam_carving/src/sc.cpp" "/home/d/d_darsha/seam_carving/build/CMakeFiles/sc.dir/src/sc.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
