@@ -1271,10 +1271,6 @@ sc.h
 /home/d/d_darsha/seam_carving/src/sc.cpp
 sc.h
 /home/d/d_darsha/seam_carving/src/sc.h
-cmath
--
-stack
--
 
 /home/d/d_darsha/seam_carving/src/sc.h
 opencv2/opencv.hpp
